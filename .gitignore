@@ -1,0 +1,5 @@
+*.pyc
+/surveymonkey_xblock.egg-info/
+/venv/
+/.tox/
+*.coverage
