@@ -1,5 +1,5 @@
 <div class="surveymonkey_block">
     <h2>{{ title }}</h2>
-    <p>{{ introductory_text }}</p>
-    <p><a href="{{survey_link}}" target="_blank">{{survey_link}}</a></p>
+    <hr>{{ introductory_text|safe }}<hr>
+    <p><a href="{{survey_link}}" target="_blank">{{ text_link }}</a></p>
 </div>

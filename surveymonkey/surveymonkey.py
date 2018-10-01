@@ -31,12 +31,19 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         scope=Scope.settings,
     )
 
+    text_link = String(
+        display_name=_("Text Link"),
+        help=_("Enter the text that will be shown instead of the url."),
+        default=_("Complete the Survey"),
+        scope=Scope.settings,
+    )
+
     introductory_text = String(
         display_name=_("Introductory Text"),
         scope=Scope.settings,
         help=_("This contains an introductory text which is displayed to the student above the survey link."),
-        default=_("Complete the survey."),
-        multiline_editor=True,
+        default="",
+        multiline_editor="html",
         resettable_editor=False
     )
 
@@ -51,6 +58,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     editable_fields = (
         "display_name",
         "survey_link",
+        "text_link",
         "trackable",
         "introductory_text",
     )
@@ -79,11 +87,11 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
 
         if self.trackable:
             link = "{}?uid={}".format(link, self.runtime.anonymous_student_id)
-        import pudb; pu.db
 
         context = {
             "title": self.display_name,
             "introductory_text": self.introductory_text,
+            "text_link": self.text_link,
             "survey_link": link,
         }
 
