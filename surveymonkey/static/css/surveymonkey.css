@@ -1,1 +1,4 @@
 /* CSS for SurveyMonkeyXBlock */
+.surveymonkey_block .button.btn {
+	margin: 0;
+}
