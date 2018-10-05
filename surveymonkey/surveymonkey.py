@@ -1,4 +1,7 @@
-"""TO-DO: Write a description of what this XBlock is."""
+"""
+This Xblock allows to embed a survey link in a unit course.
+If the mode track-able is selected, the user anonymous id will be sent as a query parameter
+"""
 
 import pkg_resources
 
