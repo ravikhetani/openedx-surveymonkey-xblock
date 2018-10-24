@@ -6,12 +6,17 @@ If the mode track-able is selected, the user anonymous id will be sent as a quer
 import pkg_resources
 
 from django.utils.translation import ugettext_lazy as _
+from oauthlib.oauth2 import InvalidClientError
+from webob.response import Response
 
 from xblock.core import XBlock
-from xblock.fields import Scope, String, Boolean
+from xblock.fields import Scope, String, Boolean, Float
 from xblock.fragment import Fragment
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioEditableXBlockMixin
+from xblock.validation import ValidationMessage
+
+from api_surveymonkey import ApiSurveyMonkey
 
 LOADER = ResourceLoader(__name__)
 
@@ -29,8 +34,6 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     )
 
     survey_link = String(
-        display_name=_("SurveyMonkey Link"),
-        help=_("Enter the survey link."),
         scope=Scope.settings,
     )
 
@@ -57,14 +60,74 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         default=False
     )
 
+    record_completion = Boolean(
+        display_name=_("Record Completion"),
+        help=_("Make true to add the option to verify if the survey has been completed"),
+        scope=Scope.settings,
+        default=False
+    )
+
+    client_id = String(
+        display_name=_("Client ID"),
+        help=_("Your public identifier for your surveymonkey app"),
+        default=None,
+        scope=Scope.settings,
+    )
+
+    client_secret = String(
+        display_name=_("Client Secret"),
+        help=_("It is a secret known only to the application and the authorization server."),
+        default=None,
+        scope=Scope.settings,
+    )
+
+    survey_name = String(
+        display_name=_("SurveyMonkey Name"),
+        help=_("Enter the survey name."),
+        scope=Scope.settings,
+    )
+
+    weight = Float(
+        display_name=_("Score"),
+        help=_("Defines the number of points each problem is worth. "),
+        values={"min": 0, "step": .1},
+        default=1,
+        scope=Scope.settings
+    )
+
+    collector_id = String(
+        scope=Scope.settings,
+    )
+
+    completed_survey = Boolean(
+        scope=Scope.user_state,
+        default=False,
+    )
+
+    has_score = True
+    api_survey_monkey = None
+
     # Possible editable fields
     editable_fields = (
         "display_name",
-        "survey_link",
+        "survey_name",
         "text_link",
         "trackable",
+        "record_completion",
         "introductory_text",
+        "weight",
+        "client_id",
+        "client_secret",
     )
+
+    def validate_field_data(self, validation, data):
+        try:
+            api_survey_monkey = ApiSurveyMonkey(data.client_id, data.client_secret)
+        except InvalidClientError:
+            validation.add(ValidationMessage(ValidationMessage.ERROR, u"Invalid client id or client secret"))
+            return
+
+        self._validate_survey_name(validation, data, api_survey_monkey)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -96,6 +159,77 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "introductory_text": self.introductory_text,
             "text_link": self.text_link,
             "survey_link": link,
+            "completed_survey": self.completed_survey,
+            "record_completion": self.record_completion,
         }
 
         return context
+
+    def _validate_survey_name(self, validation, data, api_surveymonkey):
+        """
+        This method searches survey list by survey title and sets a message if the survey is not unique
+        """
+        kwargs = {"title": data.survey_name}
+        response = api_surveymonkey.get_surveys(**kwargs)
+        data_response = response.get("data", [])
+
+        filtered_data = [survey for survey in data_response if survey["title"] == data.survey_name]
+        count = len(filtered_data)
+
+        if count == 0:
+            validation.add(ValidationMessage(ValidationMessage.ERROR, u"Invalid survey name, the survey doesn't exist"))
+            return
+        elif count > 1:
+            validation.add(ValidationMessage(
+                ValidationMessage.ERROR, u"Invalid survey name, there are two or more surveys with the same name"
+            ))
+            return
+
+        collectors = api_surveymonkey.get_collectors(filtered_data[0].get("id"), **{"include": "url,type"})
+        data_collectors = collectors.get("data")
+
+        if len(data_collectors) == 0:
+            validation.add(ValidationMessage(
+                ValidationMessage.ERROR, u"The survey must have at least one defined collector"
+            ))
+            return
+        for data_collector in data_collectors:
+            if data_collector.get("type") == "weblink":
+                self.survey_link = data_collector.get("url")
+                self.collector_id = data_collector.get("id")
+                return
+
+        validation.add(ValidationMessage(
+            ValidationMessage.ERROR, u"The survey must have at least one weblink defined collector"
+        ))
+
+    @property
+    def _api_survey_monkey(self):
+
+        if self.api_survey_monkey is not None:
+            return self.api_survey_monkey
+        try:
+            self.api_survey_monkey = ApiSurveyMonkey(self.client_id, self.client_secret)
+            return self.api_survey_monkey
+
+        except InvalidClientError:
+            return None
+
+    def _get_collector_reponses(self):
+
+        return self._api_survey_monkey.get_collector_responses(self.collector_id).get("data")
+
+    @XBlock.handler
+    def verify_completion(self, request, suffix=''):
+        responses = self._get_collector_reponses()
+        uid = self.runtime.anonymous_student_id
+        for response in responses:
+            custom_variables = response.get("custom_variables", {})
+            if custom_variables.get("uid") == uid:
+                self.completed_survey = True
+                self.runtime.publish(self, 'grade', {'value': self.weight, 'max_value': self.weight})
+
+        return Response(json_body={"completed": self.completed_survey})
+
+    def max_score(self):
+        return self.weight
