@@ -176,7 +176,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         filtered_data = [survey for survey in data_response if survey["title"] == data.survey_name]
         count = len(filtered_data)
 
-        if count == 0:
+        if not count:
             validation.add(ValidationMessage(ValidationMessage.ERROR, u"Invalid survey name, the survey doesn't exist"))
             return
         elif count > 1:
@@ -188,7 +188,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         collectors = api_surveymonkey.get_collectors(filtered_data[0].get("id"), **{"include": "url,type"})
         data_collectors = collectors.get("data")
 
-        if len(data_collectors) == 0:
+        if not len(data_collectors):
             validation.add(ValidationMessage(
                 ValidationMessage.ERROR, u"The survey must have at least one defined collector"
             ))

@@ -10,6 +10,7 @@ from oauthlib.oauth2 import BackendApplicationClient
 
 LOG = logging.getLogger(__name__)
 API_BASE = "https://api.surveymonkey.com"
+SURVEY_MONKEY_API_TAG = "api_survey_monkey"
 CACHE_TIMEOUT = 86400
 
 
@@ -20,17 +21,19 @@ class ApiSurveyMonkey(object):
     def __init__(self, client_id, client_secret):
         self.session = requests.Session()
 
-        key = "{}-{}".format("api_survey_monkey", client_id)
+        key = "{}-{}".format(SURVEY_MONKEY_API_TAG, client_id)
         headers = cache.get(key)
 
-        if headers is None:
+        if not headers:
             headers = self.authenticate(client_id, client_secret)
             cache.set(key, headers, CACHE_TIMEOUT)
 
         self.session.headers.update(headers)
 
     def authenticate(self, client_id, client_secret):
-
+        """
+        This method return a dict with the authorization token
+        """
         client = BackendApplicationClient(client_id=client_id)
         oauth = OAuth2Session(client=client)
         authenticate_url = "{}/{}".format(API_BASE, "oauth/token")
@@ -46,18 +49,24 @@ class ApiSurveyMonkey(object):
         return headers
 
     def __call_api_post(self, url, data):
+        """
+        This uses the session to make a POST request and returns the response
+        """
         response = self.session.post(url=url, json=data)
         LOG.info("Surveymonkey post response with status code = %s", response.status_code)
         return response
 
     def __call_api_get(self, url, payload):
+        """
+        This uses the session to make a GET request and return the response
+        """
         response = self.session.get(url=url, params=payload)
         LOG.info("Surveymonkey get response with status code = %s", response.status_code)
         return response
 
     def get_collector_responses(self, collector_id, **kwargs):
         """
-        Returns a list of responses.
+        Retrieves a list of full expanded responses, including answers to all questions.
         """
         url = "{}/{}/{}/{}".format(
             API_BASE,
@@ -75,7 +84,7 @@ class ApiSurveyMonkey(object):
 
     def get_surveys(self, **kwargs):
         """
-        Search survey list
+        Returns a list of surveys owned or shared with the authenticated user.
         """
         url = "{}/{}".format(
             API_BASE,
@@ -91,7 +100,7 @@ class ApiSurveyMonkey(object):
 
     def get_collectors(self, survey_id, **kwargs):
         """
-        Search survey list
+        Returns a list of collectors for a given survey.
         """
         url = "{}/{}/{}/{}".format(
             API_BASE,
