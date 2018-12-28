@@ -5,16 +5,21 @@ If the mode track-able is selected, the user anonymous id will be sent as a quer
 
 import pkg_resources
 
+from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from oauthlib.oauth2 import InvalidClientError
 from webob.response import Response
+from web_fragments.fragment import Fragment
 
 from xblock.core import XBlock
 from xblock.fields import Scope, String, Boolean, Float
-from xblock.fragment import Fragment
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioEditableXBlockMixin
 from xblock.validation import ValidationMessage
+
+from courseware.courses import get_course_by_id
+from branding import api as branding_api
+from microsite_configuration import microsite
 
 from api_surveymonkey import ApiSurveyMonkey
 
@@ -56,13 +61,6 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     trackable = Boolean(
         display_name=_("User Tracking"),
         help=_("Make true if you want to track the survey using the user_id."),
-        scope=Scope.settings,
-        default=False
-    )
-
-    record_completion = Boolean(
-        display_name=_("Record Completion"),
-        help=_("Make true to add the option to verify if the survey has been completed"),
         scope=Scope.settings,
         default=False
     )
@@ -113,7 +111,6 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         "survey_name",
         "text_link",
         "trackable",
-        "record_completion",
         "introductory_text",
         "weight",
         "client_id",
@@ -146,6 +143,26 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         frag.initialize_js('SurveyMonkeyXBlock')
         return frag
 
+    def studio_view(self, context=None):
+        """  Returns edit studio view fragment """
+        context = {
+            "completion_page": self.completion_page,
+        }
+        frag = super(SurveyMonkeyXBlock, self).studio_view(context)
+        frag.add_content(LOADER.render_template("static/html/surveymonkeystudio.html", context))
+        frag.add_javascript(self.resource_string("static/js/src/studio_view.js"))
+        frag.initialize_js('StudioViewEdit')
+        return frag
+
+    @property
+    def completion_page(self):
+        base = microsite.get_value_for_org(
+            self.course_id.org,
+            "SITE_NAME",
+            settings.LMS_ROOT_URL,
+        )
+        return "{}/{}/{}#{}".format(base, "xblock", self.location, "completion")
+
     @property
     def context(self):
 
@@ -159,9 +176,18 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "introductory_text": self.introductory_text,
             "text_link": self.text_link,
             "survey_link": link,
-            "completed_survey": self.completed_survey,
-            "record_completion": self.record_completion,
+            "completed_survey": self.verify_completion(),
         }
+
+        if hasattr(self.xmodule_runtime, 'is_author_mode'):
+            return context
+
+        context.update({
+            "logo": branding_api.get_logo_url(False),
+            "course": get_course_by_id(self.course_id),
+            "footer": branding_api.get_footer(False),
+            "completion_page": self.completion_page,
+        })
 
         return context
 
@@ -219,17 +245,17 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
 
         return self._api_survey_monkey.get_collector_responses(self.collector_id).get("data")
 
-    @XBlock.handler
-    def verify_completion(self, request, suffix=''):
-        responses = self._get_collector_reponses()
-        uid = self.runtime.anonymous_student_id
-        for response in responses:
-            custom_variables = response.get("custom_variables", {})
-            if custom_variables.get("uid") == uid:
-                self.completed_survey = True
-                self.runtime.publish(self, 'grade', {'value': self.weight, 'max_value': self.weight})
+    def verify_completion(self):
+        if not self.completed_survey:
+            responses = self._get_collector_reponses()
+            uid = self.runtime.anonymous_student_id
+            for response in responses:
+                custom_variables = response.get("custom_variables", {})
+                if custom_variables.get("uid") == uid:
+                    self.completed_survey = True
+                    self.runtime.publish(self, 'grade', {'value': self.weight, 'max_value': self.weight})
 
-        return Response(json_body={"completed": self.completed_survey})
+        return self.completed_survey
 
     def max_score(self):
         return self.weight
