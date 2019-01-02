@@ -161,7 +161,14 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "SITE_NAME",
             settings.LMS_ROOT_URL,
         )
-        return "{}/{}/{}#{}".format(base, "xblock", self.location, "completion")
+        if not base.startswith("http"):
+            base = "//{}".format(base)
+
+        return "{base}/courses/{course_key}/xblock/{usage_key}/handler/completion".format(
+            base=base,
+            course_key=self.course_id,
+            usage_key=self.location,
+        )
 
     @property
     def context(self):
@@ -177,17 +184,8 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "text_link": self.text_link,
             "survey_link": link,
             "completed_survey": self.verify_completion(),
-        }
-
-        if hasattr(self.xmodule_runtime, 'is_author_mode'):
-            return context
-
-        context.update({
-            "logo": branding_api.get_logo_url(False),
-            "course": get_course_by_id(self.course_id),
-            "footer": branding_api.get_footer(False),
             "completion_page": self.completion_page,
-        })
+        }
 
         return context
 
@@ -259,3 +257,15 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
 
     def max_score(self):
         return self.weight
+
+    @XBlock.handler
+    def completion(self, request, suffix=''):
+
+        context = {
+            "logo": branding_api.get_logo_url(False),
+            "course": get_course_by_id(self.course_id),
+            "footer": branding_api.get_footer(False),
+            "completed_survey": self.verify_completion(),
+            "css": self.resource_string("static/css/surveymonkey.css"),
+        }
+        return Response(LOADER.render_template("static/html/surveymonkey_completion_page.html", context))
