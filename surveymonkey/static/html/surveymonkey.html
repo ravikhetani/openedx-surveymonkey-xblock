@@ -3,16 +3,17 @@
     <h2>{{ title }}</h2>
     <hr>{{ introductory_text|safe }}<hr>
 
-    {% if completed_survey and record_completion %}
+    {% if completed_survey %}
         <p class="status-message">{% trans "Completed" %}</p>
-    {% elif  record_completion %}
+    {% else %}
         <p class="status-message">{% trans "Uncompleted" %}</p>
     {% endif %}
 
     <p>
-        <a class="button btn" href="{{survey_link}}" target="_blank">{{ text_link }}</a>
-        {% if record_completion and not completed_survey %}
-            <a class="button btn done">{% trans "Mark as done" %}</a>
+        {% if completed_survey %}
+            <a class="button btn" href="{{completion_page}}" target="_blank">{{ text_link }}</a>
+        {% else %}
+            <a class="button btn" href="{{survey_link}}" target="_blank">{{ text_link }}</a>
         {% endif %}
     </p>
 </div>
