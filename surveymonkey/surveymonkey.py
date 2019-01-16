@@ -7,7 +7,7 @@ import pkg_resources
 
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-from oauthlib.oauth2 import InvalidClientError
+from oauthlib.oauth2 import InvalidClientIdError, InvalidClientError
 from webob.response import Response
 from web_fragments.fragment import Fragment
 
@@ -236,12 +236,15 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             self.api_survey_monkey = ApiSurveyMonkey(self.client_id, self.client_secret)
             return self.api_survey_monkey
 
-        except InvalidClientError:
+        except InvalidClientIdError:
             return None
 
     def _get_collector_reponses(self):
 
-        return self._api_survey_monkey.get_collector_responses(self.collector_id).get("data")
+        try:
+            return self._api_survey_monkey.get_collector_responses(self.collector_id).get("data")
+        except AttributeError:
+            return []
 
     def verify_completion(self):
         if not self.completed_survey:
