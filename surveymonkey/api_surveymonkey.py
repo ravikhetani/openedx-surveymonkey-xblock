@@ -21,7 +21,7 @@ class ApiSurveyMonkey(object):
     def __init__(self, client_id, client_secret):
         self.session = requests.Session()
 
-        key = "{}-{}".format(SURVEY_MONKEY_API_TAG, client_id)
+        key = "{}-{}-{}".format(SURVEY_MONKEY_API_TAG, client_id, client_secret)
         headers = cache.get(key)
 
         if not headers:
