@@ -162,7 +162,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             settings.LMS_ROOT_URL,
         )
         if not base.startswith("http"):
-            base = "//{}".format(base)
+            base = "https://{}".format(base)
 
         return "{base}/courses/{course_key}/xblock/{usage_key}/handler/completion".format(
             base=base,
