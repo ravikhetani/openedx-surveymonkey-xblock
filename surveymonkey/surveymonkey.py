@@ -158,11 +158,12 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     def completion_page(self):
         base = microsite.get_value_for_org(
             self.course_id.org,
-            "SITE_NAME",
+            "LMS_ROOT_URL",
             settings.LMS_ROOT_URL,
         )
-        if not base.startswith("http"):
-            base = "https://{}".format(base)
+
+        if base.endswith("/"):
+            base = base[:-1]
 
         return "{base}/courses/{course_key}/xblock/{usage_key}/handler/completion".format(
             base=base,
