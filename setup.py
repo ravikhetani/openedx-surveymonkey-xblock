@@ -3,7 +3,7 @@
 import os
 
 from setuptools import setup
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 
 def package_data(pkg, roots):
