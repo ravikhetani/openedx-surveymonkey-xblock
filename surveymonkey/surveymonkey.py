@@ -266,10 +266,9 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     def completion(self, request, suffix=''):
 
         context = {
-            "logo": branding_api.get_logo_url(False),
             "course": get_course_by_id(self.course_id),
-            "footer": branding_api.get_footer(False),
             "completed_survey": self.verify_completion(),
             "css": self.resource_string("static/css/surveymonkey.css"),
+            "online_help_token": "online_help_token",
         }
         return Response(LOADER.render_template("static/html/surveymonkey_completion_page.html", context))

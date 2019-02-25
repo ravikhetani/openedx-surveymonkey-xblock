@@ -2,58 +2,27 @@
 .surveymonkey_block .button.btn {
 	margin: 0;
 }
-.surveymonkey-footer{
-    border-top:1px solid #0075b4;
+
+.surveymonkey_block_completion .main-content {
+    padding: 20px;
 }
-.surveymonkey-footer .colophon{
-    float:left;
-    display:block;
-    width:65%;
+
+.surveymonkey_block_completion .main-content h2 {
+    text-align: center;
 }
-.surveymonkey-footer .copyright{
-    margin:-2px 0 8px 0;
-    font-size:0.7em;
-    color:#767676;
-    text-align:left;
+
+.surveymonkey_block_completion .main-content p {
+    text-align: center;
 }
-.surveymonkey-footer .nav-legal li{
-    display:inline-block;
-    font-size:0.7em;
+
+.surveymonkey_block_completion .surveymonkey-footer{
+    padding: 20px;
 }
-.surveymonkey-footer .footer-about-openedx a{
-    float:right;
-    display:inline-block;
+
+.surveymonkey_block_completion .surveymonkey-header{
+    padding: 20px;
 }
-.surveymonkey-header{
-    box-sizing:border-box;
-    width:100%;
-    overflow:hidden;
-    padding-bottom:10px;
-    border-bottom:1px solid #0075b4;
-}
-.surveymonkey-header .header-logo{
-    display:inline;
-}
-.surveymonkey-header .header-logo a{
-    float:left;
-    margin:15px 0 0 40px;
-    display:block;
-    height:40px;
-}
-.surveymonkey-header .header-logo .logo{
-    height:40px;
-}
-.surveymonkey-header .header-logo .course-header{
-    float:left;
-    margin:16px 0 0 20px;
-    font-size:0.9rem;
-    color:#313131;
-    line-height:1em;
-    display:block;
-}
-.surveymonkey-header .header-logo .course-header .course-name{
-    display:block;
-    font-size:1rem;
-    margin-top:7px;
-    font-weight:600;
+
+.surveymonkey_block_completion .surveymonkey-header .nav-item{
+    display: none;
 }
