@@ -7,11 +7,12 @@
         <p class="status-message">{% trans "Completed" %}</p>
     {% else %}
         <p class="status-message">{% trans "Incomplete" %}</p>
-    {% endif %}
-
-    <p>
-        {% if not completed_survey %}
-            <a class="button btn" href="{{survey_link}}" target="_blank">{{ text_link }}</a>
+        {% if inline_survey_view %}
+            <iframe class="surveymonkey_block survey_inline_iframe" src="{{ survey_link }}"></iframe>
+        {% else %}
+            <p>
+                <a class="button btn" href="{{survey_link}}" target="_blank">{{ text_link }}</a>
+            </p>
         {% endif %}
-    </p>
+    {% endif %}
 </div>
