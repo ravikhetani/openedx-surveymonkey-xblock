@@ -111,6 +111,17 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         default=False,
     )
 
+    is_for_external_course = Boolean(
+        display_name=_("External course"),
+        help=_(
+            """
+            True if the survey is for an external course.
+            """
+        ),
+        scope=Scope.settings,
+        default=False,
+    )
+
     overwrite_survey_questions = Boolean(
         display_name=_("Overwrite survey questions."),
         help=_("""
@@ -171,6 +182,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         "client_id",
         "client_secret",
         "inline_survey_view",
+        "is_for_external_course",
         "overwrite_survey_questions",
         "previous_survey_name",
         "overwritten_question_headings",
@@ -212,7 +224,12 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         frag = Fragment(LOADER.render_template("static/html/surveymonkey.html", self.context))
         frag.add_css(self.resource_string("static/css/surveymonkey.css"))
         frag.add_javascript(self.resource_string("static/js/src/surveymonkey.js"))
-        frag.initialize_js('SurveyMonkeyXBlock')
+        frag.initialize_js(
+            'SurveyMonkeyXBlock',
+            json_args={
+                "is_for_external_course": self.is_for_external_course,
+            },
+        )
         return frag
 
     def studio_view(self, context=None):
@@ -262,6 +279,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "completed_survey": self.verify_completion() if not hasattr(self.xmodule_runtime, 'is_author_mode') else True,
             "completion_page": self.completion_page,
             "inline_survey_view": self.inline_survey_view,
+            "is_for_external_course": self.is_for_external_course,
         }
 
         return context
