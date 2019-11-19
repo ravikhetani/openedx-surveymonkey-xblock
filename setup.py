@@ -3,7 +3,7 @@
 import os
 
 from setuptools import setup
-__version__ = '0.4.0'
+__version__ = '0.5.0'
 
 
 def package_data(pkg, roots):
