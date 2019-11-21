@@ -1,0 +1,24 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{% trans "SurveyMonkey Completion Page" %}</title>
+  <link rel="stylesheet" href="/static/css/lms-main-v1.css" type="text/css" media="all" />
+  <style type="text/css">{{ css }}</style>
+</head>
+<body>
+  <div class="surveymonkey_block_confirmation" >
+      <div class="main-content">
+        {% if completed_survey %}
+            <h2>{% trans "Survey Completed" %}</h2>
+            <p>{% trans "Thank you for completing this survey. Your submission has been successfully recorded." %}</p>
+            </br>
+              <a class="button btn" href="{{course_link}}" target="_blank">{% trans "Go to course" %}</a>
+        {% else %}
+            <h2>{% trans "Survey Incomplete" %}</h2>
+            <p>{% trans "Please complete the survey" %}</p>
+        {% endif %}
+      </div>
+  </div>
+</body>
+</html>
