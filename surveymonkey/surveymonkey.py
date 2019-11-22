@@ -2,6 +2,7 @@
 This Xblock allows to embed a survey link in a unit course.
 If the mode track-able is selected, the user anonymous id will be sent as a query parameter
 """
+import logging
 import pkg_resources
 
 from branding import api as branding_api
@@ -10,6 +11,7 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from microsite_configuration import microsite
 from oauthlib.oauth2 import InvalidClientError, InvalidClientIdError
+from submissions import api as submissions_api
 from web_fragments.fragment import Fragment
 from webob.response import Response
 from xblock.core import XBlock
@@ -20,6 +22,7 @@ from xblockutils.studio_editable import StudioEditableXBlockMixin
 
 from .api_surveymonkey import ApiSurveyMonkey
 
+LOG = logging.getLogger(__name__)
 LOADER = ResourceLoader(__name__)
 
 
@@ -235,7 +238,8 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     def studio_view(self, context=None):
         """  Returns edit studio view fragment """
         context = {
-            "completion_page": self.completion_page,
+            "completion_page": self.get_handler_url("completion"),
+            "confirmation_page": self.get_handler_url("confirmation"),
         }
         frag = super(SurveyMonkeyXBlock, self).studio_view(context)
         frag.add_content(LOADER.render_template("static/html/surveymonkeystudio.html", context))
@@ -243,8 +247,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         frag.initialize_js('StudioViewEdit')
         return frag
 
-    @property
-    def completion_page(self):
+    def get_handler_url(self, handler_name):
         base = microsite.get_value_for_org(
             self.course_id.org,
             "LMS_ROOT_URL",
@@ -254,10 +257,11 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         if base.endswith("/"):
             base = base[:-1]
 
-        return "{base}/courses/{course_key}/xblock/{usage_key}/handler/completion".format(
+        return "{base}/courses/{course_key}/xblock/{usage_key}/handler/{handler_name}".format(
             base=base,
             course_key=self.course_id,
             usage_key=self.location,
+            handler_name=handler_name,
         )
 
     @property
@@ -277,7 +281,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "text_link": self.text_link,
             "survey_link": link,
             "completed_survey": self.verify_completion() if not hasattr(self.xmodule_runtime, 'is_author_mode') else True,
-            "completion_page": self.completion_page,
+            "completion_page": self.get_handler_url("completion"),
             "inline_survey_view": self.inline_survey_view,
             "is_for_external_course": self.is_for_external_course,
         }
@@ -357,6 +361,35 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
 
         return survey_data
 
+    def _check_completion_from_submissions(self):
+        """
+        """
+        completion = False
+        last_submission = None
+        try:
+            submissions = submissions_api.get_submissions(self.student_item)
+            if submissions:
+                completion = True
+                last_submission = submissions[0]
+        except Exception:
+            LOG.info(
+                "Error getting submissions for the survey %s related to course %s",
+                self.survey_name,
+                self.course_id.to_deprecated_string(),
+            )
+
+        return completion, last_submission
+
+    @property
+    def student_item(self):
+        item = dict(
+            student_id=self.runtime.anonymous_student_id,
+            course_id=self.course_id.to_deprecated_string(),
+            item_id=self.location.block_id,
+            item_type="surveymonkey",
+        )
+        return item
+
     @property
     def _api_survey_monkey(self):
 
@@ -375,15 +408,11 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
 
     def verify_completion(self):
         if not self.completed_survey:
-            responses = self._api_survey_monkey.get_survey_responses(self.survey_id)
-            uid = self.runtime.anonymous_student_id
-
-            for response in responses.get("data", []):
-                custom_variables = response.get("custom_variables", {})
-
-                if custom_variables.get("uid") == uid:
-                    self.completed_survey = True
-                    self.runtime.publish(self, 'grade', {'value': self.weight, 'max_value': self.weight})
+            submission_status, last_submission = self._check_completion_from_submissions()
+            if submission_status and last_submission:
+                self.completed_survey = True
+                submissions_api.set_score(last_submission.get("uuid"), self.weight, self.weight)
+                return True
 
         return self.completed_survey
 
@@ -400,6 +429,33 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             "online_help_token": "online_help_token",
         }
         return Response(LOADER.render_template("static/html/surveymonkey_completion_page.html", context))
+
+    @XBlock.handler
+    def confirmation(self, request, suffix=''):
+
+        uid = request.params.get('uid')
+        user = self.runtime.get_real_user(uid)
+
+        try:
+            if user and self.is_for_external_course:
+                submissions_api.create_submission(
+                    self.student_item,
+                    {"survey_completed":True}
+                )
+        except Exception:
+            LOG.info(
+                "Error creating a submission for the survey %s related to course %s",
+                self.survey_name,
+                self.course_id.to_deprecated_string(),
+            )
+
+        course = get_course_by_id(self.course_id)
+        context = {
+            "completed_survey": self.verify_completion(),
+            "css": self.resource_string("static/css/surveymonkey.css"),
+            "course_link": course.other_course_settings.get("external_course_target"),
+        }
+        return Response(LOADER.render_template("static/html/surveymonkey_confirmation_page.html", context))
 
     def overwrite_survey_question_headings(self):
         """
