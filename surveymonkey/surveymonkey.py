@@ -411,7 +411,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             submission_status, last_submission = self._check_completion_from_submissions()
             if submission_status and last_submission:
                 self.completed_survey = True
-                submissions_api.set_score(last_submission.get("uuid"), self.weight, self.weight)
+                # submissions_api.set_score(last_submission.get("uuid"), self.weight, self.weight)
                 return True
 
         return self.completed_survey
