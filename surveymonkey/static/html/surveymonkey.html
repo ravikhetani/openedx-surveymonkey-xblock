@@ -6,7 +6,7 @@
     {% if completed_survey %}
         <p class="status-message">{% trans "Completed" %}</p>
     {% else %}
-        <p class="status-message">{% trans "Incomplete" %}</p>
+        <!-- <p class="status-message">{% trans "Incomplete" %}</p> -->
         {% if inline_survey_view %}
             <iframe class="surveymonkey_block survey_inline_iframe" src="{{ survey_link }}"></iframe>
         {% else %}
