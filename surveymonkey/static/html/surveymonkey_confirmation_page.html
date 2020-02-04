@@ -2,18 +2,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>{% trans "SurveyMonkey Completion Page" %}</title>
+  <title>{% trans "SurveyMonkey Confirmation Page" %}</title>
   <link rel="stylesheet" href="/static/css/lms-main-v1.css" type="text/css" media="all" />
   <style type="text/css">{{ css }}</style>
+
 </head>
 <body>
   <div class="surveymonkey_block_confirmation" >
       <div class="main-content">
         {% if completed_survey %}
-            <h2>{% trans "Survey Completed" %}</h2>
-            <p>{% trans "Thank you for completing this survey. Your submission has been successfully recorded." %}</p>
-            </br>
-              <a class="button btn" href="{{course_link}}" target="_blank">{% trans "Go to course" %}</a>
+        <div class="message">
+          <p>
+            Thank you for completing this goal-setting survey. This should help you to be clear about your motivation for enrolling and to think about your weekly learning goals.
+          </p>
+        <br><br>
+          <p>
+            We'll remind you of these intentions midway through the course so you can adjust them if necessary.
+          </p>
+          <br><br>
+          <p>
+            Click below to begin the course.
+          </p>
+        </br>
+        <a class="button btn" href="{{course_link}}" target="_blank">{% trans "Go to course" %}</a>
+        </div>
         {% else %}
             <h2>{% trans "Survey Incomplete" %}</h2>
             <p>{% trans "Please complete the survey" %}</p>
