@@ -8,7 +8,6 @@ import pkg_resources
 from openedx.core.lib.courses import get_course_by_id
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from microsite_configuration import microsite
 from oauthlib.oauth2 import InvalidClientError, InvalidClientIdError
 from submissions import api as submissions_api
 from web_fragments.fragment import Fragment
@@ -247,16 +246,12 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
         return frag
 
     def get_handler_url(self, handler_name):
-        base = microsite.get_value_for_org(
-            self.course_id.org,
-            "LMS_ROOT_URL",
-            settings.LMS_ROOT_URL,
-        )
+        base = settings.LMS_BASE
 
         if base.endswith("/"):
             base = base[:-1]
 
-        return "{base}/courses/{course_key}/xblock/{usage_key}/handler/{handler_name}".format(
+        return "{base}/learning/course/{course_key}/block-v1:{usage_key}/handler/{handler_name}".format(
             base=base,
             course_key=self.course_id,
             usage_key=self.location,
