@@ -7,7 +7,7 @@ import pkg_resources
 
 from openedx.core.lib.courses import get_course_by_id
 from django.conf import settings
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from microsite_configuration import microsite
 from oauthlib.oauth2 import InvalidClientError, InvalidClientIdError
 from submissions import api as submissions_api
