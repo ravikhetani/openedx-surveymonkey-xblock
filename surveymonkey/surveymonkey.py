@@ -5,7 +5,6 @@ If the mode track-able is selected, the user anonymous id will be sent as a quer
 import logging
 import pkg_resources
 
-from branding import api as branding_api
 from courseware.courses import get_course_by_id
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
