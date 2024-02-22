@@ -5,7 +5,7 @@ If the mode track-able is selected, the user anonymous id will be sent as a quer
 import logging
 import pkg_resources
 
-from courseware.courses import get_course_by_id
+from openedx.core.lib.courses import get_course_by_id
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 from microsite_configuration import microsite
