@@ -15,6 +15,7 @@ from webob.response import Response
 from xblock.core import XBlock
 from xblock.fields import Boolean, Float, Integer, Scope, String
 from xblock.validation import ValidationMessage
+from six import text_type
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioEditableXBlockMixin
 
@@ -369,7 +370,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             LOG.info(
                 "Error getting submissions for the survey %s related to course %s",
                 self.survey_name,
-                unicode(self.course_id),
+                text_type(self.course_id),
             )
 
         return completion, last_submission
@@ -378,7 +379,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
     def student_item(self):
         item = dict(
             student_id=self.runtime.anonymous_student_id,
-            course_id=unicode(self.course_id),
+            course_id=text_type(self.course_id),
             item_id=self.location.block_id,
             item_type="surveymonkey",
         )
@@ -440,7 +441,7 @@ class SurveyMonkeyXBlock(XBlock, StudioEditableXBlockMixin):
             LOG.info(
                 "Error creating a submission for the survey %s related to course %s",
                 self.survey_name,
-                unicode(self.course_id),
+                text_type(self.course_id),
             )
 
         course = get_course_by_id(self.course_id)
